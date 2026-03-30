@@ -1,0 +1,867 @@
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FX Liquidity Matrix Pro — Vedxant SMC Liquidity Matrix</title>
+  <meta name="description" content="Advanced Smart Money Indicator with Liquidity, BOS and Auto TP/SL by Vedant Kundankar." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial'],
+            mono: ['JetBrains Mono', 'SFMono-Regular', 'Consolas', 'monospace']
+          },
+          boxShadow: {
+            glow: '0 0 0 1px rgba(0,255,136,0.2), 0 0 30px rgba(0,255,136,0.15), inset 0 0 40px rgba(0,255,136,0.05)',
+            glowLg: '0 0 0 1px rgba(0,255,136,0.3), 0 0 60px rgba(0,255,136,0.25), inset 0 0 60px rgba(0,255,136,0.07)'
+          },
+          animation: {
+            float: 'float 6s ease-in-out infinite',
+            pulseGlow: 'pulseGlow 2.5s ease-in-out infinite',
+            shimmer: 'shimmer 2.2s linear infinite',
+            marquee: 'marquee 22s linear infinite',
+            tick: 'tick 0.6s ease-out'
+          },
+          keyframes: {
+            float: {
+              '0%,100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' }
+            },
+            pulseGlow: {
+              '0%,100%': { boxShadow: '0 0 0 0 rgba(0,255,136,0.0)' },
+              '50%': { boxShadow: '0 0 0 12px rgba(0,255,136,0.06)' }
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-500% 0' },
+              '100%': { backgroundPosition: '500% 0' }
+            },
+            marquee: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' }
+            },
+            tick: {
+              '0%': { transform: 'scale(0.7)', opacity: '0' },
+              '60%': { transform: 'scale(1.08)', opacity: '1' },
+              '100%': { transform: 'scale(1)', opacity: '1' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { background: #0a0d10; }
+    .noise::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><filter id="n"><feTurbulence baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.04"/></svg>');
+      pointer-events: none;
+    }
+    .mask-fade {
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 10%, #000 90%, transparent);
+      mask-image: linear-gradient(180deg, transparent, #000 10%, #000 90%, transparent);
+    }
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(10px);
+    }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .shimmer {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      background-size: 200% 100%;
+    }
+    .price-toggle [data-active="true"] {
+      background: linear-gradient(180deg, rgba(0,255,136,0.18), rgba(0,255,136,0.08));
+      border-color: rgba(0,255,136,0.55);
+      box-shadow: 0 0 0 1px rgba(0,255,136,0.25), 0 10px 30px rgba(0,255,136,0.15);
+    }
+    .tick path { stroke-dasharray: 48; stroke-dashoffset: 48; transition: stroke-dashoffset .5s ease .15s; }
+    .success .tick path { stroke-dashoffset: 0; }
+    .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+  </style>
+</head>
+<body class="text-zinc-100 antialiased selection:bg-emerald-300/30 selection:text-emerald-100">
+  <!-- Top progress -->
+  <div class="fixed top-0 left-0 right-0 h-[2px] z-[60]">
+    <div id="progress" class="h-full w-0 bg-emerald-400 shadow-[0_0_12px_#34d399] transition-[width] duration-150"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 backdrop-blur-xl bg-black/30 border-b border-white/10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="relative">
+          <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-glow grid place-items-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="text-black">
+              <path d="M4 12l4-4 4 4 8-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 4v6h-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399] animate-pulse"></span>
+        </div>
+        <div class="leading-tight">
+          <div class="font-extrabold tracking-tight text-[15px]">Vedxant</div>
+          <div class="text-[10px] uppercase tracking-widest text-emerald-300/90 -mt-1">SMC Liquidity Matrix</div>
+        </div>
+      </a>
+      <nav class="hidden md:flex items-center gap-7 text-sm">
+        <a href="#features" class="hover:text-emerald-300 transition">Features</a>
+        <a href="#pricing" class="hover:text-emerald-300 transition">Pricing</a>
+        <a href="#faq" class="hover:text-emerald-300 transition">FAQ</a>
+        <button data-cta class="ml-2 inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-emerald-500/90 hover:bg-emerald-400 text-black font-semibold shadow-glow transition">
+          Buy Now
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7h-5M17 7v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </nav>
+      <button id="menuBtn" class="md:hidden inline-flex items-center justify-center rounded-lg p-2 hover:bg-white/10">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="md:hidden hidden border-t border-white/10 bg-black/70 backdrop-blur-xl">
+      <div class="px-4 py-4 space-y-3 text-sm">
+        <a href="#features" class="block">Features</a>
+        <a href="#pricing" class="block">Pricing</a>
+        <a href="#faq" class="block">FAQ</a>
+        <button data-cta class="w-full mt-2 rounded-xl px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold">Buy Now</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0">
+      <div class="absolute -top-32 -right-32 h-[520px] w-[520px] rounded-full bg-emerald-500/10 blur-[120px]"></div>
+      <div class="absolute -bottom-40 -left-32 h-[480px] w-[480px] rounded-full bg-emerald-400/10 blur-[120px]"></div>
+      <div class="absolute inset-0 grid-bg opacity-[0.25]"></div>
+      <div class="absolute inset-0 noise"></div>
+    </div>
+
+    <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+      <div class="grid lg:grid-cols-2 gap-10 items-center">
+        <!-- Left -->
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Limited Offer — Prices increase soon
+          </div>
+          <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05]">
+            <span class="bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-transparent">FX Liquidity Matrix Pro</span>
+          </h1>
+          <p class="mt-4 text-lg sm:text-xl text-zinc-300 max-w-xl">
+            Advanced Smart Money Indicator with Liquidity, BOS and Auto TP/SL
+          </p>
+          <div class="mt-7 flex flex-wrap items-center gap-3">
+            <button data-plan="lifetime" data-cta class="group relative rounded-2xl px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold shadow-glow transition flex items-center gap-2">
+              Buy Lifetime — ₹14,999
+              <span class="text-xs font-semibold bg-black/10 px-2 py-0.5 rounded-lg">Best value</span>
+              <span class="absolute inset-0 rounded-2xl shimmer opacity-0 group-hover:opacity-100 transition"></span>
+            </button>
+            <button data-plan="monthly" data-cta class="rounded-2xl px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 font-semibold">
+              Start Monthly — ₹4,999
+            </button>
+          </div>
+
+          <!-- Trust row -->
+          <div class="mt-8 flex flex-wrap items-center gap-6 text-sm text-zinc-300">
+            <div class="flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-emerald-400"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Used by traders
+            </div>
+            <div class="flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-emerald-400"><path d="M12 2l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7l3-7z" stroke="currentColor" stroke-width="1.5"/></svg>
+              Smart Money based
+            </div>
+            <div class="flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-emerald-400"><path d="M12 8v8m-4-4h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Non-repaint signals
+            </div>
+          </div>
+
+          <!-- Mini ticker -->
+          <div class="mt-8 glass rounded-xl p-3 overflow-hidden">
+            <div class="flex gap-8 whitespace-nowrap animate-marquee">
+              <div class="flex items-center gap-6 opacity-80">
+                <span class="font-mono text-emerald-300">EURUSD</span><span class="text-zinc-400">+0.12%</span>
+                <span class="font-mono text-emerald-300">GBPUSD</span><span class="text-zinc-400">-0.08%</span>
+                <span class="font-mono text-emerald-300">USDJPY</span><span class="text-zinc-400">+0.23%</span>
+                <span class="font-mono text-emerald-300">XAUUSD</span><span class="text-zinc-400">+0.51%</span>
+                <span class="font-mono text-emerald-300">BTCUSD</span><span class="text-zinc-400">-0.37%</span>
+              </div>
+              <div class="flex items-center gap-6 opacity-80" aria-hidden="true">
+                <span class="font-mono text-emerald-300">EURUSD</span><span class="text-zinc-400">+0.12%</span>
+                <span class="font-mono text-emerald-300">GBPUSD</span><span class="text-zinc-400">-0.08%</span>
+                <span class="font-mono text-emerald-300">USDJPY</span><span class="text-zinc-400">+0.23%</span>
+                <span class="font-mono text-emerald-300">XAUUSD</span><span class="text-zinc-400">+0.51%</span>
+                <span class="font-mono text-emerald-300">BTCUSD</span><span class="text-zinc-400">-0.37%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: chart mock -->
+        <div class="relative">
+          <div class="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-emerald-500/10 to-transparent blur-2xl"></div>
+          <div class="relative glass rounded-[28px] shadow-glowLg p-4 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-lg bg-zinc-800 grid place-items-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 17l4-6 3 4 5-9 4 6" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div>
+                  <div class="text-sm font-semibold">EURUSD • 15m</div>
+                  <div class="text-xs text-zinc-400">Smart Money View</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">Liquidity Sweep</span>
+                <span class="px-2 py-1 rounded-md bg-white/5 border border-white/10">BOS</span>
+                <span class="px-2 py-1 rounded-md bg-white/5 border border-white/10">Auto TP/SL</span>
+              </div>
+            </div>
+
+            <!-- Chart SVG -->
+            <div class="relative rounded-xl bg-[#0b0f13] border border-white/10 overflow-hidden">
+              <svg viewBox="0 0 800 360" class="w-full h-[300px]">
+                <defs>
+                  <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#34d399" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+                  </linearGradient>
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  </pattern>
+                </defs>
+                <rect x="0" y="0" width="800" height="360" fill="url(#grid)"/>
+                <!-- Price path -->
+                <path d="M0,220 L40,210 L80,230 L120,200 L160,210 L200,190 L240,205 L280,175 L320,185 L360,160 L400,170 L440,150 L480,160 L520,140 L560,150 L600,130 L640,140 L680,120 L720,135 L760,110 L800,120"
+                      fill="none" stroke="#34d399" stroke-width="3" />
+                <path d="M0,220 L40,210 L80,230 L120,200 L160,210 L200,190 L240,205 L280,175 L320,185 L360,160 L400,170 L440,150 L480,160 L520,140 L560,150 L600,130 L640,140 L680,120 L720,135 L760,110 L800,120 L800,360 L0,360 Z"
+                      fill="url(#g)" />
+                <!-- Liquidity zones -->
+                <rect x="110" y="85" width="120" height="14" rx="7" fill="rgba(16,185,129,0.15)" stroke="rgba(52,211,153,0.35)"/>
+                <rect x="350" y="95" width="140" height="14" rx="7" fill="rgba(16,185,129,0.15)" stroke="rgba(52,211,153,0.35)"/>
+                <rect x="610" y="65" width="130" height="14" rx="7" fill="rgba(16,185,129,0.15)" stroke="rgba(52,211,153,0.35)"/>
+                <!-- BOS markers -->
+                <g transform="translate(280,175)">
+                  <circle r="6" fill="#0b0f13" stroke="#34d399" stroke-width="2"/>
+                  <text x="10" y="4" fill="#9ae6b4" font-size="12" font-family="Inter">BOS</text>
+                </g>
+                <g transform="translate(520,140)">
+                  <circle r="6" fill="#0b0f13" stroke="#34d399" stroke-width="2"/>
+                  <text x="10" y="4" fill="#9ae6b4" font-size="12" font-family="Inter">BOS</text>
+                </g>
+                <!-- Auto TP/SL -->
+                <line x1="680" y1="120" x2="800" y2="120" stroke="#34d399" stroke-dasharray="6 6"/>
+                <rect x="720" y="103" width="60" height="22" rx="6" fill="#052e1f" stroke="#34d399"/>
+                <text x="730" y="118" fill="#6ee7b7" font-size="12">TP</text>
+                <line x1="680" y1="120" x2="800" y2="160" stroke="#f87171" stroke-dasharray="6 6"/>
+                <rect x="720" y="159" width="60" height="22" rx="6" fill="#2a0b0b" stroke="#f87171"/>
+                <text x="730" y="174" fill="#fca5a5" font-size="12">SL</text>
+                <!-- Sweep callout -->
+                <g transform="translate(120,210)">
+                  <rect x="-8" y="-34" width="132" height="28" rx="8" fill="#052e1f" stroke="#34d399"/>
+                  <text x="0" y="-16" fill="#a7f3d0" font-size="12">Liquidity Sweep →</text>
+                </g>
+              </svg>
+              <div class="absolute bottom-2 right-2 text-[10px] font-mono text-zinc-500">Demo visualization</div>
+            </div>
+
+            <!-- Floating badges -->
+            <div class="absolute -left-4 top-24 hidden sm:block">
+              <div class="glass rounded-xl px-3 py-2 text-xs flex items-center gap-2 shadow-glow animate-float">
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Smart Signals: BUY
+              </div>
+            </div>
+            <div class="absolute -right-4 bottom-20 hidden sm:block">
+              <div class="glass rounded-xl px-3 py-2 text-xs flex items-center gap-2 shadow-glow animate-float">
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Auto TP/SL Active
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Social proof / logos -->
+  <section class="relative border-y border-white/10 bg-white/[0.02]">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-80 text-xs sm:text-sm">
+        <span class="uppercase tracking-widest text-zinc-400">Trusted by traders across</span>
+        <span class="font-semibold">TradingView</span>
+        <span class="font-semibold">Forex</span>
+        <span class="font-semibold">Gold</span>
+        <span class="font-semibold">Crypto</span>
+        <span class="font-semibold">Indices</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="relative py-16 sm:py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-2xl">
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Everything you need for Smart Money trading</h2>
+        <p class="mt-3 text-zinc-300">Detect liquidity, confirm break of structure, and manage risk automatically — built for TradingView.</p>
+      </div>
+      <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Card -->
+        <div class="group relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.02] p-5 hover:border-emerald-400/40 transition shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+          <div class="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(600px_120px_at_50%_-20%,rgba(16,185,129,0.18),transparent)] pointer-events-none"></div>
+          <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-400/30 grid place-items-center mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M12 4v16" stroke="#34d399" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="font-bold text-lg">Liquidity Sweep</h3>
+          <p class="mt-2 text-sm text-zinc-300">Pinpoint liquidity grabs around highs/lows with clear sweep markers and confluence scoring.</p>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-400">
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> Real-time detection</li>
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> Sweep + retest filters</li>
+          </ul>
+        </div>
+        <!-- Card -->
+        <div class="group relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.02] p-5 hover:border-emerald-400/40 transition">
+          <div class="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(600px_120px_at_50%_-20%,rgba(16,185,129,0.18),transparent)] pointer-events-none"></div>
+          <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-400/30 grid place-items-center mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12l6-6 6 6 6-6" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="font-bold text-lg">Break of Structure</h3>
+          <p class="mt-2 text-sm text-zinc-300">Automatic BOS/CHoCH labeling with multi-timeframe confirmation for precision entries.</p>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-400">
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> MTF confluence</li>
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> FVG & OB tagging</li>
+          </ul>
+        </div>
+        <!-- Card -->
+        <div class="group relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.02] p-5 hover:border-emerald-400/40 transition">
+          <div class="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(600px_120px_at_50%_-20%,rgba(16,185,129,0.18),transparent)] pointer-events-none"></div>
+          <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-400/30 grid place-items-center mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#34d399" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="font-bold text-lg">Smart Signals</h3>
+          <p class="mt-2 text-sm text-zinc-300">Non-repaint entry signals with context filters: session, volatility, and liquidity score.</p>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-400">
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> Session filter</li>
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> Risk-adjusted entries</li>
+          </ul>
+        </div>
+        <!-- Card -->
+        <div class="group relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.02] p-5 hover:border-emerald-400/40 transition">
+          <div class="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(600px_120px_at_50%_-20%,rgba(16,185,129,0.18),transparent)] pointer-events-none"></div>
+          <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-400/30 grid place-items-center mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M8 8l-4 4 4 4" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="font-bold text-lg">Auto TP/SL</h3>
+          <p class="mt-2 text-sm text-zinc-300">Dynamic targets using structure and ATR. Partial booking and breakeven automation.</p>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-400">
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> RR presets</li>
+            <li class="flex gap-2"><span class="text-emerald-400">•</span> One-click templates</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Feature stats -->
+      <div class="mt-10 grid sm:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-white/10 p-5 bg-white/[0.03]">
+          <div class="text-3xl font-black">4.9<span class="text-emerald-400">/5</span></div>
+          <div class="text-sm text-zinc-400">Average user rating</div>
+        </div>
+        <div class="rounded-2xl border border-white/10 p-5 bg-white/[0.03]">
+          <div class="text-3xl font-black">1,200+</div>
+          <div class="text-sm text-zinc-400">Active traders</div>
+        </div>
+        <div class="rounded-2xl border border-white/10 p-5 bg-white/[0.03]">
+          <div class="text-3xl font-black">24/7</div>
+          <div class="text-sm text-zinc-400">Priority support</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="relative py-16 sm:py-24 border-t border-white/10">
+    <div class="absolute inset-0 -z-10 opacity-40">
+      <div class="absolute left-1/2 -translate-x-1/2 top-0 h-[500px] w-[900px] rounded-full bg-emerald-500/10 blur-[140px]"></div>
+    </div>
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-2xl mx-auto text-center">
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Simple pricing, premium value</h2>
+        <p class="mt-3 text-zinc-300">Choose the plan that fits your journey. Upgrade anytime.</p>
+
+        <!-- Toggle -->
+        <div class="mt-8 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 price-toggle">
+          <button id="toggleMonthly" class="px-4 py-2 rounded-xl border border-transparent text-sm font-semibold" data-active="true">Monthly</button>
+          <button id="toggleLifetime" class="px-4 py-2 rounded-xl border border-transparent text-sm font-semibold" data-active="false">Lifetime</button>
+        </div>
+      </div>
+
+      <div class="mt-10 grid lg:grid-cols-2 gap-6 items-stretch">
+        <!-- Monthly -->
+        <div id="cardMonthly" class="relative rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] p-6 sm:p-8">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-2xl font-extrabold">Monthly</h3>
+              <p class="text-zinc-400 text-sm mt-1">30 Days Access • Cancel anytime</p>
+            </div>
+            <div class="text-right">
+              <div class="text-4xl font-black">₹4,999</div>
+              <div class="text-xs text-zinc-400">incl. GST</div>
+            </div>
+          </div>
+          <ul class="mt-6 space-y-3 text-sm">
+            <li class="flex gap-3"><svg class="mt-0.5 text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Full FX Liquidity Matrix Pro access</li>
+            <li class="flex gap-3"><svg class="mt-0.5 text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Liquidity Sweep, BOS, Signals, Auto TP/SL</li>
+            <li class="flex gap-3"><svg class="mt-0.5 text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Updates & priority support</li>
+          </ul>
+          <button data-plan="monthly" data-cta class="mt-8 w-full rounded-2xl px-6 py-4 bg-white/10 hover:bg-white/15 border border-white/10 font-semibold">Start Monthly — ₹4,999</button>
+          <p class="mt-3 text-center text-xs text-zinc-500">Secure checkout • Instant access</p>
+        </div>
+
+        <!-- Lifetime -->
+        <div id="cardLifetime" class="relative rounded-[28px] border border-emerald-400/40 bg-gradient-to-b from-emerald-500/[0.08] to-emerald-500/[0.02] p-6 sm:p-8 shadow-glow">
+          <span class="absolute -top-3 left-6 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-black">Most Popular — Best Value</span>
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-2xl font-extrabold">Lifetime</h3>
+              <p class="text-zinc-300 text-sm mt-1">Unlimited Access • One-time payment</p>
+            </div>
+            <div class="text-right">
+              <div class="text-4xl font-black tracking-tight">₹14,999</div>
+              <div class="text-xs text-zinc-300">incl. GST</div>
+            </div>
+          </div>
+          <ul class="mt-6 space-y-3 text-sm">
+            <li class="flex gap-3"><svg class="mt-0.5 text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Everything in Monthly</li>
+            <li class="flex gap-3"><svg class="mt-0.5 text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Lifetime updates & new features</li>
+            <li class="flex gap-3"><svg class="mt-0.5 text-emerald-400" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VIP support & private group</li>
+          </ul>
+          <button data-plan="lifetime" data-cta class="mt-8 w-full rounded-2xl px-6 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold shadow-glow">Buy Lifetime — ₹14,999</button>
+          <p class="mt-3 text-center text-xs text-emerald-200/80">Limited Offer • Price increases soon</p>
+        </div>
+      </div>
+
+      <!-- Payment logos -->
+      <div class="mt-10 flex flex-wrap items-center justify-center gap-6 opacity-80">
+        <span class="text-xs uppercase tracking-widest text-zinc-500">Secure payments</span>
+        <div class="h-8 px-3 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-xs font-semibold">Razorpay</div>
+        <div class="h-8 px-3 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-xs font-semibold">UPI</div>
+        <div class="h-8 px-3 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-xs font-semibold">Cards</div>
+        <div class="h-8 px-3 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-xs font-semibold">Netbanking</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials / Trust -->
+  <section class="py-16 sm:py-24 border-t border-white/10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1">
+          <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Loved by Smart Money traders</h3>
+          <p class="mt-3 text-zinc-300">Real results from disciplined traders using structure, liquidity, and risk control.</p>
+          <div class="mt-6 flex items-center gap-3 text-sm">
+            <div class="flex -space-x-3">
+              <img class="h-9 w-9 rounded-full border-2 border-[#0a0d10]" src="https://i.pravatar.cc/100?img=12" alt="">
+              <img class="h-9 w-9 rounded-full border-2 border-[#0a0d10]" src="https://i.pravatar.cc/100?img=32" alt="">
+              <img class="h-9 w-9 rounded-full border-2 border-[#0a0d10]" src="https://i.pravatar.cc/100?img=45" alt="">
+              <div class="h-9 w-9 rounded-full bg-emerald-500/20 border-2 border-[#0a0d10] grid place-items-center text-xs font-bold">1k+</div>
+            </div>
+            <span class="text-zinc-400">Join the community</span>
+          </div>
+        </div>
+        <div class="lg:col-span-2 grid sm:grid-cols-2 gap-5">
+          <div class="rounded-2xl border border-white/10 p-5 bg-white/[0.03]">
+            <div class="flex items-center gap-2 text-amber-300">
+              ★★★★★
+            </div>
+            <p class="mt-3 text-sm text-zinc-300">“Clear BOS signals and liquidity levels. Auto TP/SL saves me time and emotions.”</p>
+            <div class="mt-4 text-xs text-zinc-500">— Aarav, Intraday FX</div>
+          </div>
+          <div class="rounded-2xl border border-white/10 p-5 bg-white/[0.03]">
+            <div class="flex items-center gap-2 text-amber-300">
+              ★★★★★
+            </div>
+            <p class="mt-3 text-sm text-zinc-300">“Best smart money indicator I’ve used on TradingView. Worth the lifetime.”</p>
+            <div class="mt-4 text-xs text-zinc-500">— Meera, Swing Trader</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Form section -->
+  <section id="get-access" class="py-16 sm:py-24 border-t border-white/10 bg-[radial-gradient(800px_200px_at_50%_0%,rgba(16,185,129,0.07),transparent)]">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Get access after checkout</h3>
+        <p class="mt-2 text-zinc-300">Enter your TradingView username and email to receive access.</p>
+      </div>
+      <form id="accessForm" class="mt-8 grid gap-4 glass rounded-[24px] p-5 sm:p-6">
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm text-zinc-300">TradingView Username</label>
+            <div class="mt-1 relative">
+              <input required name="tv" class="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3.5 outline-none focus:border-emerald-400/50 focus:ring-4 focus:ring-emerald-500/10 font-mono" placeholder="e.g., vedxant_trader" />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">@tradingview</span>
+            </div>
+          </div>
+          <div>
+            <label class="text-sm text-zinc-300">Email</label>
+            <input required type="email" name="email" class="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3.5 outline-none focus:border-emerald-400/50 focus:ring-4 focus:ring-emerald-500/10" placeholder="you@example.com" />
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <input id="agree" type="checkbox" required class="h-4 w-4 rounded border-white/20 bg-black/40">
+          <label for="agree" class="text-sm text-zinc-300">I agree to the terms and understand this is a digital product with no refunds after access is granted.</label>
+        </div>
+        <button class="rounded-2xl px-6 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold shadow-glow">Submit & Request Access</button>
+        <p class="text-xs text-zinc-500 text-center">We’ll verify your payment and grant indicator access via TradingView.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-16 sm:py-24 border-t border-white/10">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-center">Frequently asked questions</h3>
+      <div class="mt-8 grid gap-4">
+        <details class="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 open:shadow-glow">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
+            <span class="font-semibold">How do I get access on TradingView?</span>
+            <svg class="transition group-open:rotate-180" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </summary>
+          <p class="mt-3 text-sm text-zinc-300">After payment, submit your TradingView username. We add you to the private indicator within minutes during business hours.</p>
+        </details>
+        <details class="group rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
+            <span class="font-semibold">Do signals repaint?</span>
+            <svg class="transition group-open:rotate-180" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </summary>
+          <p class="mt-3 text-sm text-zinc-300">Core entry signals are non-repaint once the bar closes. Context tags update in real time for visual confluence.</p>
+        </details>
+        <details class="group rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
+            <span class="font-semibold">Which markets and timeframes work best?</span>
+            <svg class="transition group-open:rotate-180" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </summary>
+          <p class="mt-3 text-sm text-zinc-300">FX majors, gold, indices, and crypto. Intraday traders prefer 5–30m, swing traders 1H–4H.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/10 py-10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-black"><path d="M4 12l4-4 4 4 8-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="text-sm">
+            <div class="font-bold">Vedxant SMC Liquidity Matrix</div>
+            <div class="text-zinc-500">FX Liquidity Matrix Pro</div>
+          </div>
+        </div>
+        <div class="text-xs text-zinc-500">© 2026 Vedant Kundankar. All rights reserved.</div>
+        <div class="flex items-center gap-4 text-xs">
+          <a href="#" class="hover:text-emerald-300">Terms</a>
+          <a href="#" class="hover:text-emerald-300">Privacy</a>
+          <a href="#" class="hover:text-emerald-300">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Checkout modal -->
+  <div id="checkoutModal" class="fixed inset-0 z-[70] hidden">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close></div>
+    <div class="relative mx-auto mt-12 w-[min(92vw,560px)] rounded-[28px] border border-white/10 bg-[#0b0f13] shadow-glowLg overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-white/5 border border-white/10 grid place-items-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M12 4v16" stroke="#34d399" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="font-bold leading-tight">Secure Checkout</div>
+            <div class="text-xs text-zinc-400">Razorpay-style demo UI • No real charge</div>
+          </div>
+        </div>
+        <button class="p-2 rounded-lg hover:bg-white/10" data-close aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 sm:p-6">
+        <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-sm text-zinc-400">Product</div>
+              <div class="font-bold text-lg">FX Liquidity Matrix Pro</div>
+              <div id="planName" class="text-xs mt-1 px-2 py-1 inline-flex rounded-md bg-emerald-500/15 text-emerald-200 border border-emerald-400/30">Lifetime</div>
+            </div>
+            <div class="text-right">
+              <div id="planPrice" class="text-3xl font-black">₹14,999</div>
+              <div class="text-[11px] text-zinc-500">includes GST</div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid sm:grid-cols-2 gap-3">
+            <label class="rounded-xl border border-white/10 bg-black/30 p-3 flex items-center gap-3 cursor-pointer">
+              <input type="radio" name="payMethod" class="accent-emerald-500" checked>
+              <div class="text-sm">
+                <div class="font-semibold">UPI</div>
+                <div class="text-xs text-zinc-500">Google Pay, PhonePe, Paytm</div>
+              </div>
+            </label>
+            <label class="rounded-xl border border-white/10 bg-black/30 p-3 flex items-center gap-3 cursor-pointer">
+              <input type="radio" name="payMethod" class="accent-emerald-500">
+              <div class="text-sm">
+                <div class="font-semibold">Card</div>
+                <div class="text-xs text-zinc-500">Visa, Mastercard, Amex</div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Coupon -->
+          <div class="mt-4 flex gap-2">
+            <input id="coupon" class="flex-1 rounded-xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-emerald-400/50" placeholder="Coupon code (optional)">
+            <button id="applyCoupon" class="rounded-xl px-4 py-3 bg-white/10 border border-white/10 font-semibold">Apply</button>
+          </div>
+          <div id="couponMsg" class="mt-2 text-xs text-emerald-300 hidden">Coupon applied: LAUNCH10 (demo)</div>
+        </div>
+
+        <!-- Summary -->
+        <div class="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-zinc-400">Subtotal</span>
+            <span id="sumSub" class="font-semibold">₹14,999</span>
+          </div>
+          <div class="flex items-center justify-between text-sm mt-1">
+            <span class="text-zinc-400">Discount</span>
+            <span id="sumDisc" class="font-semibold text-emerald-300">—</span>
+          </div>
+          <div class="h-px bg-white/10 my-3"></div>
+          <div class="flex items-center justify-between">
+            <span class="font-bold">Total</span>
+            <span id="sumTotal" class="text-2xl font-black">₹14,999</span>
+          </div>
+        </div>
+
+        <!-- Pay button -->
+        <button id="payBtn" class="mt-5 w-full rounded-2xl px-6 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold shadow-glow flex items-center justify-center gap-3">
+          <svg id="payIcon" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="payText">Pay Securely</span>
+        </button>
+        <div class="mt-3 flex items-center justify-center gap-3 text-[11px] text-zinc-500">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Bank-grade encryption • Demo checkout only
+        </div>
+
+        <!-- Processing / Success -->
+        <div id="payState" class="hidden mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+          <div class="flex items-center gap-3">
+            <div id="paySpinner" class="h-6 w-6 rounded-full border-2 border-emerald-300/30 border-t-emerald-300 animate-spin"></div>
+            <div class="font-semibold" id="payStateText">Processing payment…</div>
+          </div>
+          <div id="successBlock" class="hidden mt-4">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-emerald-500/20 border border-emerald-400/40 grid place-items-center success">
+                <svg class="tick" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div>
+                <div class="font-bold">Payment successful (demo)</div>
+                <div class="text-sm text-zinc-300">We’ve unlocked your access form.</div>
+              </div>
+            </div>
+            <a href="#get-access" data-close class="mt-4 inline-flex rounded-xl px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold">Go to Access Form</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden z-[80]">
+    <div class="rounded-xl bg-[#0b0f13] border border-white/10 shadow-glow px-4 py-3 flex items-center gap-3">
+      <div class="h-6 w-6 rounded-full bg-emerald-500/20 grid place-items-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="text-sm font-medium" id="toastText">Access request submitted!</div>
+    </div>
+  </div>
+
+  <script>
+    // Scroll progress
+    const progress = document.getElementById('progress');
+    document.addEventListener('scroll', () => {
+      const h = document.documentElement;
+      const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+      progress.style.width = scrolled + '%';
+    });
+
+    // Mobile menu
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    menuBtn?.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+    // Plan toggle
+    const toggleMonthly = document.getElementById('toggleMonthly');
+    const toggleLifetime = document.getElementById('toggleLifetime');
+    const cardMonthly = document.getElementById('cardMonthly');
+    const cardLifetime = document.getElementById('cardLifetime');
+    let currentPlan = 'lifetime';
+
+    function setPlan(plan) {
+      currentPlan = plan;
+      const isMonthly = plan === 'monthly';
+      toggleMonthly.setAttribute('data-active', isMonthly);
+      toggleLifetime.setAttribute('data-active', !isMonthly);
+      // Highlight cards
+      cardMonthly.classList.toggle('border-emerald-400/40', isMonthly);
+      cardMonthly.classList.toggle('shadow-glow', isMonthly);
+      cardLifetime.classList.toggle('border-emerald-400/40', !isMonthly);
+      cardLifetime.classList.toggle('shadow-glow', !isMonthly);
+      // Update modal preview if open
+      updatePlanUI();
+    }
+    toggleMonthly.addEventListener('click', () => setPlan('monthly'));
+    toggleLifetime.addEventListener('click', () => setPlan('lifetime'));
+
+    // Modal
+    const modal = document.getElementById('checkoutModal');
+    const payBtn = document.getElementById('payBtn');
+    const payText = document.getElementById('payText');
+    const payIcon = document.getElementById('payIcon');
+    const payState = document.getElementById('payState');
+    const payStateText = document.getElementById('payStateText');
+    const successBlock = document.getElementById('successBlock');
+    const paySpinner = document.getElementById('paySpinner');
+    const planName = document.getElementById('planName');
+    const planPrice = document.getElementById('planPrice');
+    const sumSub = document.getElementById('sumSub');
+    const sumDisc = document.getElementById('sumDisc');
+    const sumTotal = document.getElementById('sumTotal');
+    const coupon = document.getElementById('coupon');
+    const applyCoupon = document.getElementById('applyCoupon');
+    const couponMsg = document.getElementById('couponMsg');
+
+    function openModal() {
+      updatePlanUI();
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      resetPayState();
+    }
+    function updatePlanUI() {
+      const isMonthly = currentPlan === 'monthly';
+      const name = isMonthly ? 'Monthly — 30 Days' : 'Lifetime — Unlimited';
+      const price = isMonthly ? 4999 : 14999;
+      planName.textContent = name;
+      planPrice.textContent = '₹' + price.toLocaleString('en-IN');
+      sumSub.textContent = '₹' + price.toLocaleString('en-IN');
+      sumTotal.textContent = '₹' + price.toLocaleString('en-IN');
+      sumDisc.textContent = '—';
+      couponMsg.classList.add('hidden');
+      payBtn.disabled = false;
+      payText.textContent = 'Pay Securely';
+    }
+    function resetPayState() {
+      payState.classList.add('hidden');
+      successBlock.classList.add('hidden');
+      paySpinner.classList.remove('hidden');
+      payStateText.textContent = 'Processing payment…';
+    }
+
+    // Open modal from any CTA
+    document.querySelectorAll('[data-cta]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const plan = btn.getAttribute('data-plan');
+        if (plan) setPlan(plan);
+        openModal();
+      });
+    });
+    // Close handlers
+    modal.addEventListener('click', (e) => {
+      if (e.target.hasAttribute('data-close')) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    });
+
+    // Coupon demo
+    applyCoupon.addEventListener('click', () => {
+      if (!coupon.value.trim()) return;
+      const price = currentPlan === 'monthly' ? 4999 : 14999;
+      const discount = Math.round(price * 0.10);
+      sumDisc.textContent = '- ₹' + discount.toLocaleString('en-IN');
+      sumTotal.textContent = '₹' + (price - discount).toLocaleString('en-IN');
+      couponMsg.classList.remove('hidden');
+    });
+
+    // Payment simulation
+    let paying = false;
+    payBtn.addEventListener('click', () => {
+      if (paying) return;
+      paying = true;
+      payBtn.disabled = true;
+      payState.classList.remove('hidden');
+      payText.textContent = 'Processing…';
+      payIcon.classList.add('opacity-50');
+      // Simulate steps
+      setTimeout(() => {
+        payStateText.textContent = 'Authorizing…';
+      }, 900);
+      setTimeout(() => {
+        payStateText.textContent = 'Finalizing…';
+      }, 1800);
+      setTimeout(() => {
+        paySpinner.classList.add('hidden');
+        successBlock.classList.remove('hidden');
+        payStateText.textContent = 'Payment successful (demo)';
+        paying = false;
+      }, 2600);
+    });
+
+    // Access form toast
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    function showToast(msg) {
+      toastText.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2600);
+    }
+    document.getElementById('accessForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const tv = fd.get('tv');
+      const email = fd.get('email');
+      if (!tv || !email) return;
+      showToast('Access request submitted! Check your email.');
+      e.target.reset();
+    });
+
+    // Initialize
+    setPlan('lifetime');
+  </script>
+</body>
+</html>
