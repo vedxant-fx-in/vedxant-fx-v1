@@ -167,12 +167,12 @@
           </p>
           <div class="mt-7 flex flex-wrap items-center gap-3">
             <button data-plan="lifetime" data-cta class="group relative rounded-2xl px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold shadow-glow transition flex items-center gap-2">
-              Buy Lifetime — ₹9999
+              Buy Lifetime — ₹14,999
               <span class="text-xs font-semibold bg-black/10 px-2 py-0.5 rounded-lg">Best value</span>
               <span class="absolute inset-0 rounded-2xl shimmer opacity-0 group-hover:opacity-100 transition"></span>
             </button>
             <button data-plan="monthly" data-cta class="rounded-2xl px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 font-semibold">
-              Start Monthly — ₹2999
+              Start Monthly — ₹4,999
             </button>
           </div>
 
@@ -223,7 +223,7 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 17l4-6 3 4 5-9 4 6" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
                 <div>
-                  <div class="text-sm font-semibold">XAUUSD • 5M</div>
+                  <div class="text-sm font-semibold">EURUSD • 15m</div>
                   <div class="text-xs text-zinc-400">Smart Money View</div>
                 </div>
               </div>
@@ -278,7 +278,8 @@
                   <text x="0" y="-16" fill="#a7f3d0" font-size="12">Liquidity Sweep →</text>
                 </g>
               </svg>
-              
+              <div class="absolute bottom-2 right-2 text-[10px] font-mono text-zinc-500">Demo visualization</div>
+            </div>
 
             <!-- Floating badges -->
             <div class="absolute -left-4 top-24 hidden sm:block">
@@ -418,7 +419,7 @@
               <p class="text-zinc-400 text-sm mt-1">30 Days Access • Cancel anytime</p>
             </div>
             <div class="text-right">
-              <div class="text-4xl font-black">₹2,999</div>
+              <div class="text-4xl font-black">₹4,999</div>
               <div class="text-xs text-zinc-400">incl. GST</div>
             </div>
           </div>
@@ -440,7 +441,7 @@
               <p class="text-zinc-300 text-sm mt-1">Unlimited Access • One-time payment</p>
             </div>
             <div class="text-right">
-              <div class="text-4xl font-black tracking-tight">₹9,999</div>
+              <div class="text-4xl font-black tracking-tight">₹14,999</div>
               <div class="text-xs text-zinc-300">incl. GST</div>
             </div>
           </div>
@@ -650,7 +651,7 @@
         <div class="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
           <div class="flex items-center justify-between text-sm">
             <span class="text-zinc-400">Subtotal</span>
-            <span id="sumSub" class="font-semibold">₹9,999</span>
+            <span id="sumSub" class="font-semibold">₹14,999</span>
           </div>
           <div class="flex items-center justify-between text-sm mt-1">
             <span class="text-zinc-400">Discount</span>
@@ -659,7 +660,7 @@
           <div class="h-px bg-white/10 my-3"></div>
           <div class="flex items-center justify-between">
             <span class="font-bold">Total</span>
-            <span id="sumTotal" class="text-2xl font-black">₹9,999</span>
+            <span id="sumTotal" class="text-2xl font-black">₹14,999</span>
           </div>
         </div>
 
@@ -685,7 +686,7 @@
                 <svg class="tick" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
               <div>
-                <div class="font-bold">Payment successful (drmo)</div>
+                <div class="font-bold">Payment successful (demo)</div>
                 <div class="text-sm text-zinc-300">We’ve unlocked your access form.</div>
               </div>
             </div>
@@ -774,7 +775,7 @@
     function updatePlanUI() {
       const isMonthly = currentPlan === 'monthly';
       const name = isMonthly ? 'Monthly — 30 Days' : 'Lifetime — Unlimited';
-      const price = isMonthly ? 2,999 : 9,999;
+      const price = isMonthly ? 4999 : 14999;
       planName.textContent = name;
       planPrice.textContent = '₹' + price.toLocaleString('en-IN');
       sumSub.textContent = '₹' + price.toLocaleString('en-IN');
